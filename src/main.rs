@@ -1,5 +1,6 @@
 use teloxide::{prelude::*, utils::command::BotCommand};
 
+use std::env;
 use std::error::Error;
 
 #[derive(BotCommand)]
@@ -27,6 +28,7 @@ async fn answer(
 
 #[tokio::main]
 async fn main() {
+    std::env::set_var("TELOXIDE_TOKEN", "2142641726:AAEZsR1ytcegAR55RloWochXrzxK34va7_c");
     run().await;
 }
 
