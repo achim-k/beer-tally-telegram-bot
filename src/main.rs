@@ -15,12 +15,14 @@ lazy_static! {
 #[derive(BotCommand)]
 #[command(rename = "lowercase", description = "These commands are supported:")]
 enum Command {
-    #[command(description = "display this text.")]
+    #[command(description = "Display this help text.")]
     Help,
-    #[command(description = "register as a player.")]
+    #[command(description = "Register as a player.")]
     Register(String),
-    #[command(description = "unregister as a player.")]
+    #[command(description = "Unregister as a player.")]
     Unregister,
+    #[command(description = "Provides a list of all registered players")]
+    PlayerList,
 }
 
 async fn answer(
@@ -32,6 +34,7 @@ async fn answer(
 
     match command {
         Command::Help => cx.answer(Command::descriptions()).await?,
+
         Command::Register(username) => {
             let return_string = match STORAGE
                 .lock()
@@ -53,11 +56,17 @@ async fn answer(
             };
             cx.answer(return_string).await?
         }
+
         Command::Unregister => {
             let return_string = match STORAGE.lock().unwrap().unregister_player(chat_id, user_id) {
                 Ok(_) => String::from("Successfully unregistered."),
                 Err(_) => String::from("You were not registered."),
             };
+            cx.answer(return_string).await?
+        }
+
+        Command::PlayerList => {
+            let return_string = STORAGE.lock().unwrap().player_list(chat_id);
             cx.answer(return_string).await?
         }
     };

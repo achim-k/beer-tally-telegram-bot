@@ -13,6 +13,7 @@ pub trait BeerTally {
         username: &str,
     ) -> RegisterPlayerResult;
     fn unregister_player(&mut self, chat_id: i64, user_id: i64) -> Result<(), ()>;
+    fn player_list(&mut self, chat_id: i64) -> String;
 }
 
 use std::collections::HashMap;
@@ -71,5 +72,17 @@ impl BeerTally for HashMapBeerTally {
                 None => Err(()),
             },
         }
+    }
+
+    fn player_list(&mut self, chat_id: i64) -> String {
+        let mut list_of_players = Vec::new();
+
+        for user in self.players.get_mut(&chat_id) {
+            for name in user.values() {
+                list_of_players.push(name.to_owned());
+            }
+        }
+        
+        format!("{:?}", list_of_players)
     }
 }
