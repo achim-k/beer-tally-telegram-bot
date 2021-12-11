@@ -3,6 +3,7 @@ use teloxide::{prelude::*, utils::command::BotCommand};
 use std::error::Error;
 
 mod storage;
+mod tally;
 use lazy_static::lazy_static;
 use std::sync::Mutex;
 use storage::{BeerTally, HashMapBeerTally, RegisterPlayerResult};
