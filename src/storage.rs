@@ -18,6 +18,7 @@ pub trait BeerTally {
     fn unregister_player(&mut self, chat_id: i64, user_id: i64) -> Result<(), ()>;
     fn player_list(&mut self, chat_id: i64) -> String;
     fn get_random(&mut self, chat_id: i64) -> String;
+    fn add_record(&mut self, chat_id: i64, user_id: i64, value: f32) -> Result<&str, &str>;
 }
 
 use std::collections::HashMap;
@@ -56,9 +57,9 @@ impl BeerTally for HashMapBeerTally {
                 RegisterPlayerResult::Registered
             }
             Some(usernames) => {
-                if let Some(registered_tally) = usernames.get(&user_id) {
+                if let Some(user_tally) = usernames.get(&user_id) {
                     return RegisterPlayerResult::AlreadyRegistered(
-                        registered_tally.name.clone(),
+                        user_tally.name.clone(),
                     );
                 } else if usernames.values().any(|x| x.name == username) {
                     RegisterPlayerResult::UsernameTaken
@@ -118,5 +119,20 @@ impl BeerTally for HashMapBeerTally {
 
         let rng = rand::thread_rng().gen_range(0..my_players.len());
         format!("{}", my_players[rng].name).to_string()
+    }
+
+    fn add_record(&mut self, chat_id: i64, user_id: i64, value: f32) -> Result<&str, &str> {
+        if let Some(chat) = self.players.get_mut(&chat_id) {
+            if chat.is_empty() {
+                Err("No users have been initialized in this chat, try to register some users first")
+            } else if let Some(user) = chat.get_mut(&user_id) {
+                user.add_record(value)
+            } else {
+                // This should not happen
+                Err("The user was not found")
+            }
+        } else {
+            Err("No users have been registered yet")
+        }
     }
 }

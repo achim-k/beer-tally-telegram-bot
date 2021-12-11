@@ -26,6 +26,8 @@ enum Command {
     PlayerList,
     #[command(description = "Chooses a random player.")]
     Random,
+    #[command(description = "Adds a record for the current player.")]
+    Record(f32),
 }
 
 async fn answer(
@@ -75,6 +77,14 @@ async fn answer(
 
         Command::Random => {
             let return_string = STORAGE.lock().unwrap().get_random(chat_id);
+            cx.answer(return_string).await?
+        }
+
+        Command::Record(value) => {
+            let return_string = match STORAGE.lock().unwrap().add_record(chat_id, user_id, value) {
+                Ok(msg) =>  format!("{}", msg),
+                Err(msg) => format!("{}", msg)
+            };
             cx.answer(return_string).await?
         }
     };
