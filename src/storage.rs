@@ -1,3 +1,6 @@
+use rand::Rng;
+
+
 pub enum RegisterPlayerResult {
     InvalidUsername,
     AlreadyRegistered(String),
@@ -14,6 +17,7 @@ pub trait BeerTally {
     ) -> RegisterPlayerResult;
     fn unregister_player(&mut self, chat_id: i64, user_id: i64) -> Result<(), ()>;
     fn player_list(&mut self, chat_id: i64) -> String;
+    fn get_random(&mut self, chat_id: i64) -> String;
 }
 
 use std::collections::HashMap;
@@ -75,14 +79,25 @@ impl BeerTally for HashMapBeerTally {
     }
 
     fn player_list(&mut self, chat_id: i64) -> String {
-        let mut list_of_players = Vec::new();
 
-        for user in self.players.get_mut(&chat_id) {
-            for name in user.values() {
-                list_of_players.push(name.to_owned());
-            }
-        }
+        let list_of_players : Vec<String> = match self.players.get_mut(&chat_id) {
+            Some(v) => v.values().cloned().collect(),
+            None => return format!("No users have been registered yet"),
+        };
         
         format!("{:?}", list_of_players)
+    }
+
+    fn get_random(&mut self, chat_id: i64) -> String {
+
+        let all_players = match self.players.get_mut(&chat_id) {
+            Some(v) => v,
+            None => return format!("No users have been registered yet"),
+        };
+    
+        let my_players : Vec<String> = all_players.values().cloned().collect();
+
+        let rng = rand::thread_rng().gen_range(0..my_players.len());
+        format!("{}", my_players[rng]).to_string()
     }
 }

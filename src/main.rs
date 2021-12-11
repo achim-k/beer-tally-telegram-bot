@@ -23,6 +23,8 @@ enum Command {
     Unregister,
     #[command(description = "Provides a list of all registered players")]
     PlayerList,
+    #[command(description = "Chooses a random player.")]
+    Random,
 }
 
 async fn answer(
@@ -67,6 +69,11 @@ async fn answer(
 
         Command::PlayerList => {
             let return_string = STORAGE.lock().unwrap().player_list(chat_id);
+            cx.answer(return_string).await?
+        }
+
+        Command::Random => {
+            let return_string = STORAGE.lock().unwrap().get_random(chat_id);
             cx.answer(return_string).await?
         }
     };
