@@ -21,6 +21,7 @@ pub trait BeerTally {
     fn add_record(&mut self, chat_id: i64, user_id: i64, value: f32) -> String;
     fn get_players_vect(&mut self, chat_id: i64) -> Result<Vec<tally::UserTally>, &str>;
     fn get_player(&mut self, chat_id: i64, user_id: i64) -> Result<&mut tally::UserTally, &str>;
+    fn change_name(&mut self, chat_id: i64, user_id: i64, username: &str) -> String;
 }
 
 use std::collections::HashMap;
@@ -143,6 +144,26 @@ impl BeerTally for HashMapBeerTally {
         match self.get_player(chat_id, user_id) {
             Ok(user) => user.add_record(value),
             Err(msg) => format!("{}", msg)
+        }
+    }
+
+    fn change_name(&mut self, chat_id: i64, user_id: i64, username: &str) -> String {
+        if username.is_empty() || !username.chars().all(char::is_alphanumeric) {
+            return format!("Invalid username. Only alphanumeric characters are allowed.")
+        }
+
+        match self.players.get_mut(&chat_id) {
+            None => format!("No users have been registered yet in this group"),
+            Some(usernames) => {
+                if let Some(user_tally) = usernames.get_mut(&user_id) {
+                    user_tally.change_name(username)
+                } else if usernames.values().any(|x| x.name == username) {
+                    format!("Username has already been taken")
+                } else {
+                    usernames.insert(user_id, tally::UserTally::new(username));
+                    format!("This user has not been registered yet")
+                }
+            }
         }
     }
 }

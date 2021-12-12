@@ -52,6 +52,11 @@ impl UserTally {
         }
     }
 
+    pub fn change_name(&mut self, username: &str) -> String {
+        self.name = username.to_string();
+        format!("Username has been changed to {}", username)
+    }
+
     fn save_date(&mut self, day: u32, month: u32, year: u32) {
         self.modified_date.day = day;
         self.modified_date.month = month;

@@ -28,6 +28,8 @@ enum Command {
     Random,
     #[command(description = "Adds a record for the current player.")]
     Record(f32),
+    #[command(description = "Changes the nickname for the current player")]
+    ChangeName(String),
 }
 
 async fn answer(
@@ -53,7 +55,7 @@ async fn answer(
                     format!("Successfully registered as '{}'.", &username)
                 }
                 RegisterPlayerResult::AlreadyRegistered(existing_name) => {
-                    format!("You are already registered as '{}'. Use command /change_name to change your username.", existing_name)
+                    format!("You are already registered as '{}'. Use command /changename to change your username.", existing_name)
                 }
                 RegisterPlayerResult::UsernameTaken => {
                     format!("Username '{}' is already taken.", &username)
@@ -82,6 +84,11 @@ async fn answer(
 
         Command::Record(value) => {
             let return_string = STORAGE.lock().unwrap().add_record(chat_id, user_id, value);
+            cx.answer(return_string).await?
+        }
+
+        Command::ChangeName(username) => {
+            let return_string = STORAGE.lock().unwrap().change_name(chat_id, user_id, &username);
             cx.answer(return_string).await?
         }
     };
