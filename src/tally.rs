@@ -31,7 +31,7 @@ impl UserTally {
         }
     }
 
-    pub fn add_record(&mut self, value: f32) -> Result<&str,&str> {
+    pub fn add_record(&mut self, value: f32) -> String {
         let now = Utc::now();
 
         let day : u32 = now.day();
@@ -43,13 +43,18 @@ impl UserTally {
             let index = self.records.len() - 1;
             self.records[index] = value;
             self.save_date(day, month, year);
-            Ok("Modified today's record correctly")
+            format!("Modified today's record correctly")
         } else {
             self.records.push(value);
             self.save_date(day, month, year);
 
-            Ok("Saved today's record correctly")
+            format!("Saved today's record correctly")
         }
+    }
+
+    pub fn change_name(&mut self, username: &str) -> String {
+        self.name = username.to_string();
+        format!("Username has been changed to {}", username)
     }
 
     fn save_date(&mut self, day: u32, month: u32, year: u32) {
