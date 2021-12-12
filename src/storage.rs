@@ -18,7 +18,9 @@ pub trait BeerTally {
     fn unregister_player(&mut self, chat_id: i64, user_id: i64) -> Result<(), ()>;
     fn player_list(&mut self, chat_id: i64) -> String;
     fn get_random(&mut self, chat_id: i64) -> String;
-    fn add_record(&mut self, chat_id: i64, user_id: i64, value: f32) -> Result<&str, &str>;
+    fn add_record(&mut self, chat_id: i64, user_id: i64, value: f32) -> String;
+    fn get_players_vect(&mut self, chat_id: i64) -> Result<Vec<tally::UserTally>, &str>;
+    fn get_player(&mut self, chat_id: i64, user_id: i64) -> Result<&mut tally::UserTally, &str>;
 }
 
 use std::collections::HashMap;
@@ -81,58 +83,66 @@ impl BeerTally for HashMapBeerTally {
         }
     }
 
-    fn player_list(&mut self, chat_id: i64) -> String {
-
-        let list_of_players : Vec<tally::UserTally> = match self.players.get_mut(&chat_id) {
-            Some(v) => {
-                if v.is_empty(){
-                    return format!("No users have been registered yet")
-                } else {
-                    v.values().cloned().collect()
-                }
-            },
-            None => return format!("No users have been initialized in this chat, try to register some users first"),
-        };
-        
-        let mut return_string : String = "Players:".to_string();
-        for player in &list_of_players {
-            return_string = return_string + "\n" + &player.name;
-        }
-
-        format!("{}", return_string)
-    }
-
-    fn get_random(&mut self, chat_id: i64) -> String {
-
-        let all_players = match self.players.get_mut(&chat_id) {
-            Some(v) => {
-                if v.is_empty(){
-                    return format!("No users have been registered yet")
-                } else {
-                    v.values().cloned().collect()
-                }
-            },
-            None => return format!("No users have been initialized in this chat, try to register some users first"),
-        };
-    
-        let my_players :  Vec<tally::UserTally> = all_players;
-
-        let rng = rand::thread_rng().gen_range(0..my_players.len());
-        format!("{}", my_players[rng].name).to_string()
-    }
-
-    fn add_record(&mut self, chat_id: i64, user_id: i64, value: f32) -> Result<&str, &str> {
+    fn get_players_vect(&mut self, chat_id: i64) -> Result<Vec<tally::UserTally>, &str> { 
         if let Some(chat) = self.players.get_mut(&chat_id) {
             if chat.is_empty() {
+                // Found the chat, but no users are registered
+                // Someone probably unregistered
+                Err("No users have been initialized in this chat, try to register some users first")
+            } else {
+                Ok(chat.values().cloned().collect())
+            }
+        } else {
+            // The chat could not be found (no one has registered yet)
+            Err("No users have been registered yet")
+        }
+    }
+
+    fn get_player(&mut self, chat_id: i64, user_id: i64) -> Result<&mut tally::UserTally, &str> { 
+        if let Some(chat) = self.players.get_mut(&chat_id) {
+            if chat.is_empty() {
+                // Found the chat, but no users are registered
+                // Someone probably unregistered
                 Err("No users have been initialized in this chat, try to register some users first")
             } else if let Some(user) = chat.get_mut(&user_id) {
-                user.add_record(value)
+                Ok(user)
             } else {
                 // This should not happen
                 Err("The user was not found")
             }
         } else {
+            // The chat could not be found (no one has registered yet)
             Err("No users have been registered yet")
+        }
+    }
+
+    fn player_list(&mut self, chat_id: i64) -> String {
+        match self.get_players_vect(chat_id) {
+            Ok(list_of_players) => {
+                let mut return_string : String = "Players:".to_string();
+                for player in &list_of_players {
+                    return_string = return_string + "\n" + &player.name;
+                }
+                format!("{}", return_string)
+            },
+            Err(msg) =>  format!("{}", msg)
+        }
+    }
+
+    fn get_random(&mut self, chat_id: i64) -> String {
+        match self.get_players_vect(chat_id) {
+            Ok(list_of_players) => {
+                let rng = rand::thread_rng().gen_range(0..list_of_players.len());
+                format!("{}", list_of_players[rng].name)
+            },
+            Err(msg) =>  format!("{}", msg)
+        }
+    }
+
+    fn add_record(&mut self, chat_id: i64, user_id: i64, value: f32) -> String {
+        match self.get_player(chat_id, user_id) {
+            Ok(user) => user.add_record(value),
+            Err(msg) => format!("{}", msg)
         }
     }
 }
