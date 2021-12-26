@@ -2,11 +2,10 @@ use teloxide::{prelude::*, utils::command::BotCommand};
 
 use std::error::Error;
 
-mod storage;
 mod tally;
 use lazy_static::lazy_static;
 use std::sync::Mutex;
-use storage::{BeerTally, HashMapBeerTally, RegisterPlayerResult};
+use tally::{BeerTally, HashMapBeerTally, RegisterPlayerResult};
 
 lazy_static! {
     static ref STORAGE: Mutex<Box<dyn BeerTally + Send + Sync>> =
@@ -73,7 +72,7 @@ async fn answer(
         }
 
         Command::PlayerList => {
-            let return_string = &STORAGE.lock().unwrap().player_list(chat_id);
+            let return_string = &STORAGE.lock().unwrap().print_player_list(chat_id);
             cx.answer(return_string).await?
         }
 
@@ -88,7 +87,10 @@ async fn answer(
         }
 
         Command::ChangeName(username) => {
-            let return_string = STORAGE.lock().unwrap().change_name(chat_id, user_id, &username);
+            let return_string = STORAGE
+                .lock()
+                .unwrap()
+                .change_name(chat_id, user_id, &username);
             cx.answer(return_string).await?
         }
     };
