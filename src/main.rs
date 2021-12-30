@@ -2,10 +2,10 @@ use teloxide::{prelude::*, utils::command::BotCommand};
 
 use std::error::Error;
 
-mod storage;
+mod tally;
 use lazy_static::lazy_static;
 use std::sync::Mutex;
-use storage::{BeerTally, HashMapBeerTally, RegisterPlayerResult};
+use tally::{BeerTally, HashMapBeerTally, RegisterPlayerResult};
 
 lazy_static! {
     static ref STORAGE: Mutex<Box<dyn BeerTally + Send + Sync>> =
@@ -15,12 +15,18 @@ lazy_static! {
 #[derive(BotCommand)]
 #[command(rename = "lowercase", description = "These commands are supported:")]
 enum Command {
-    #[command(description = "display this text.")]
+    #[command(description = "Display this help text.")]
     Help,
-    #[command(description = "register as a player.")]
+    #[command(description = "Register as a player.")]
     Register(String),
-    #[command(description = "unregister as a player.")]
+    #[command(description = "Unregister as a player.")]
     Unregister,
+    #[command(description = "Provides a list of all registered players")]
+    PlayerList,
+    #[command(description = "Chooses a random player.")]
+    Random,
+    #[command(description = "Changes the nickname for the current player")]
+    ChangeName(String),
 }
 
 async fn answer(
@@ -32,6 +38,7 @@ async fn answer(
 
     match command {
         Command::Help => cx.answer(Command::descriptions()).await?,
+
         Command::Register(username) => {
             let return_string = match STORAGE
                 .lock()
@@ -45,7 +52,7 @@ async fn answer(
                     format!("Successfully registered as '{}'.", &username)
                 }
                 RegisterPlayerResult::AlreadyRegistered(existing_name) => {
-                    format!("You are already registered as '{}'. Use command /change_name to change your username.", existing_name)
+                    format!("You are already registered as '{}'. Use command /changename to change your username.", existing_name)
                 }
                 RegisterPlayerResult::UsernameTaken => {
                     format!("Username '{}' is already taken.", &username)
@@ -53,11 +60,30 @@ async fn answer(
             };
             cx.answer(return_string).await?
         }
+
         Command::Unregister => {
             let return_string = match STORAGE.lock().unwrap().unregister_player(chat_id, user_id) {
                 Ok(_) => String::from("Successfully unregistered."),
                 Err(_) => String::from("You were not registered."),
             };
+            cx.answer(return_string).await?
+        }
+
+        Command::PlayerList => {
+            let return_string = &STORAGE.lock().unwrap().print_player_list(chat_id);
+            cx.answer(return_string).await?
+        }
+
+        Command::Random => {
+            let return_string = STORAGE.lock().unwrap().get_random(chat_id);
+            cx.answer(return_string).await?
+        }
+
+        Command::ChangeName(username) => {
+            let return_string = STORAGE
+                .lock()
+                .unwrap()
+                .change_name(chat_id, user_id, &username);
             cx.answer(return_string).await?
         }
     };
